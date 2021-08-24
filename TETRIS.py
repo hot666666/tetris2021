@@ -1,16 +1,29 @@
-# 시간날때 -> 맨밑칸에서의움직임,최적화,추가 게임기능
 import pygame
 import random
-from time import sleep
+import sys
 import copy
 
-WHITE = (255, 255, 255)
-pad_width = 400
-pad_height = 800
-block_size = 40
+import threading
+def set_interval(func, sec):
+    def func_wrapper():
+        set_interval(func, sec)
+        func()
+    t = threading.Timer(sec, func_wrapper)
+    t.start()
+    return t
 
-board_row = 20
-board_col = 10
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+WHITE = (255, 255, 255)
+GREEN = (0,255,0)
+YELLOW = (255,255,0)
+
+PAD_SIZE = (400, 800)
+BLOCK_SIZE = 40
+BOARD_ROW = 20
+BOARD_COL = 10
+
+SEC = 1
 
 TYPES =[ # index 0~6
 [[0,0],[0,1],[0,2],[0,3]], #직선
@@ -22,30 +35,20 @@ TYPES =[ # index 0~6
 [[0,1],[0,2],[1,0],[1,1]] #2-2 오른쪽위
 ]
 
-class board:
+class Block:
     def __init__(self):
-        self.states =[
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
-        self.index = [False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False,False]
+        self.row = 0
+        self.col = int(BOARD_COL*0.5)
+        self.states = TYPES[random.randint(0,6)]
+
+    def minmaxRow(self):
+        temp = [row[0]+self.row for row in self.states]
+        return min(temp),max(temp)
+
+class Board:
+    def __init__(self):
+        self.states =[[0 for col in range(10)] for row in range(20)]
+        self.index = [False for _ in range(20)]
 
     def checkIndex(self):
         for idx, state in enumerate(self.index):
@@ -70,27 +73,34 @@ class board:
             else:
                 r -= 1
 
-class BLOCK:
-    def __init__(self):
-        self.tRow = 0
-        self.row = 0
-        self.states = TYPES[random.randint(0,6)]
-        self.col = int(board_col*0.5)
+def checkCollision(Board, movingBlock, LOWEST=None): # 행동이 취해진 후
+    if LOWEST==None: LOWEST=0
 
-    def minmaxRow(self):
-        temp = [row[0]+self.row for row in self.states]
-        return min(temp),max(temp)
+    for blockRow,blockCol in movingBlock.states:
+        row, col = blockRow+movingBlock.row+LOWEST, blockCol+movingBlock.col
+        if not ( (-1<row and row<BOARD_ROW)and(-1<col and col<BOARD_COL) ):
+            return True
+        if Board.states[row][col] == 1:
+            return True
+    return False
 
-    def rowForPrint(self):
-        self.tRow += 0.05
-        if self.tRow // 1 == 1:
-            self.row += 1
-            self.tRow -= 1
+def drawObject(col,row, type):
+    global GamePad
+    pygame.draw.rect(GamePad, type, pygame.Rect((col*BLOCK_SIZE+2,row*BLOCK_SIZE+2),(BLOCK_SIZE-2,BLOCK_SIZE-2)))
 
+def drawBlockOnBoard(Board):
+    for idx, state in enumerate(Board.index):
+        if state:
+            for col in range(0, BOARD_COL):
+                if Board.states[idx][col] == 1:
+                    drawObject(col, idx, GREEN)
 
-def drawObject(obj, x, y):
-    global gamepad
-    gamepad.blit(obj, (x, y))
+def drawMovingBlock(colorType, movingBlock, LOWEST=None):
+    if LOWEST==None: LOWEST=0
+
+    for y, x in movingBlock.states:
+        x, y = x+movingBlock.col, y+movingBlock.row+LOWEST
+        drawObject(x,y,colorType)
 
 def rotate(movingBlock):
     maxRow = 0
@@ -101,116 +111,118 @@ def rotate(movingBlock):
     for rc in movingBlock.states:
         rc[1]+=maxRow
 
-def checkCollision(Board, movingBlock):
-    for rc in movingBlock.states:
-        row = rc[0]+movingBlock.row
-        col = rc[1]+movingBlock.col
-        try:
-            if Board.states[row][col] == 1 or row<0 or col<0 or row>board_row:
-                return True
-        except IndexError:
-            return True
-    return False
-
-def checkMovabiltiy(Board, movingBlock):
-    for rc in movingBlock.states:
-        if rc[0] + movingBlock.row == board_row-1: return False
-        if Board.states[rc[0]+movingBlock.row+1][rc[1]+movingBlock.col] == 1: return False
-    return True
-
-def checkEndFlag(Board, movingBlock):
-    for rc in movingBlock.states:
-        row = rc[0]+movingBlock.row
-        col = rc[1]+movingBlock.col
-        if Board.states[row][col]==1:
-            return True
-    return False
-
 def setBoard(Board, movingBlock):
     for rc in movingBlock.states:
         Board.states[rc[0] + movingBlock.row][rc[1] + movingBlock.col] = 1
         Board.index[rc[0] + movingBlock.row] = True
 
+def drawBoard():
+    global GamePad
+
+
+    for i in range(0,PAD_SIZE[0]+1,40):
+        pygame.draw.line(GamePad, BLACK, (i, 0), (i, PAD_SIZE[1]), 2)
+        pygame.draw.line(GamePad, BLACK, (0, i), (PAD_SIZE[0], i), 2)
+        pygame.draw.line(GamePad, BLACK, (0, PAD_SIZE[0]+i), (PAD_SIZE[0], PAD_SIZE[0]+i), 2)
+
+def makeDown():
+    global movingBlock, Board, tempRow
+    movingBlock.row += 1
+    if checkCollision(Board, movingBlock):
+        movingBlock.row -= 1
+        setBoard(Board, movingBlock)
+        movingBlock = Block()
+        tempRow = None
+
+
+def findLowest(Board, movingBlock):
+    tempRow = movingBlock.row
+    while not checkCollision(Board,movingBlock,tempRow):
+        tempRow += 1
+    return tempRow-1
+
 def runGame():
-    global gamepad, block, clock ,grid
+    global GamePad, BLOCK, Clock
     global Board, movingBlock
 
     endFlag = False
+    tempRow = None
+
+    #GamePad.fill(WHITE)
+    #drawMovingBlock(GREEN, movingBlock)
+    #drawSettedBlock()
+    #drawBoard()
 
 
     while not endFlag:
-
-        movingBlock.rowForPrint()
+        GamePad.fill(WHITE)
+        drawBoard()
+        drawMovingBlock(GREEN, movingBlock)
+        tempRow = findLowest(Board, movingBlock)
+        drawMovingBlock(YELLOW, movingBlock, tempRow)
+        drawBlockOnBoard(Board)
 
         for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.QUIT:
+                sys.exit()
 
-                if event.key == pygame.K_LEFT:    #col -1
-                    movingBlock.col-=1
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:  # col -1
+                    movingBlock.col -= 1
                     if checkCollision(Board, movingBlock):
                         movingBlock.col += 1
-                elif event.key == pygame.K_RIGHT: #col +1
-                    movingBlock.col+=1
+                if event.key == pygame.K_RIGHT:  # col +1
+                    movingBlock.col += 1
                     if checkCollision(Board, movingBlock):
                         movingBlock.col -= 1
-                elif event.key == pygame.K_UP:    #rotate
+                if event.key == pygame.K_UP:  # rotate
                     temp = copy.deepcopy(movingBlock.states)
                     rotate(movingBlock)
                     if checkCollision(Board, movingBlock):
                         movingBlock.states = temp
-                elif event.key == pygame.K_DOWN:   #row +1
-                    movingBlock.row+=1
+                if event.key == pygame.K_DOWN:   #row +1
+                    movingBlock.row += 1
                     if checkCollision(Board, movingBlock):
                         movingBlock.row -= 1
-                elif event.key == pygame.K_SPACE:
-                    while checkMovabiltiy(Board,movingBlock):
-                        movingBlock.row += 1
-
-        if not checkMovabiltiy(Board,movingBlock):
-            setBoard(Board,movingBlock)
-            Board.checkRows(movingBlock)
-            movingBlock = BLOCK()
-            Board.checkIndex()
-            if checkEndFlag(Board,movingBlock):
-                endFlag=True
+                if event.key == pygame.K_SPACE:
+                    movingBlock.row += tempRow
 
 
-
-
-        gamepad.fill(WHITE)
-        drawObject(grid, 0,0)
-        for idx, state in enumerate(Board.index):
-            if state:
-                for col in range(0,10):
-                    if Board.states[idx][col] == 1:
-                        drawObject(block, (col) * block_size+2, (idx) * block_size+2 )
-        for rc in movingBlock.states:
-            drawObject(block, (movingBlock.col+rc[1])*block_size+2,(movingBlock.row+rc[0]+movingBlock.tRow)*block_size+2)
-
-
+        GamePad.fill(WHITE)
+        drawBoard()
+        drawMovingBlock(GREEN, movingBlock)
+        tempRow = findLowest(Board, movingBlock)
+        drawMovingBlock(YELLOW, movingBlock, tempRow)
+        drawBlockOnBoard(Board)
 
         pygame.display.update()
-        clock.tick(60)
+        Clock.tick(60)
 
     pygame.quit()
 
 
 
 
+
+
+
+
+
+
 def initGame():
-    global gamepad, block, clock, grid
+    global GamePad, BLOCK, Clock
     global Board, movingBlock
 
     pygame.init()
-    gamepad = pygame.display.set_mode((pad_width, pad_height))
-    pygame.display.set_caption('tetris_2021hs v1')
-    block = pygame.image.load('newblock.png')
-    grid = pygame.image.load('board.png')
-    pygame.display.set_icon(block)
-    clock = pygame.time.Clock()
-    Board = board()
-    movingBlock = BLOCK()
+    GamePad = pygame.display.set_mode(PAD_SIZE)
+    pygame.display.set_caption('tetris_2021hs_V2')
+    BLOCK = pygame.image.load('block.png')
 
+    pygame.display.set_icon(BLOCK)
+    Clock = pygame.time.Clock()
+    Board = Board()
+    movingBlock = Block()
+    set_interval(makeDown, SEC)
 
 
 
