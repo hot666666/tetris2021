@@ -35,7 +35,7 @@ TYPES = [  # index 0~6
     [[0, 1], [0, 2], [1, 0], [1, 1]]  # 2-2 오른쪽위
 ]
 
-
+"""
 from collections import deque
 class Blocks:
     def __init__(self):
@@ -46,11 +46,13 @@ class Blocks:
         print(len(self.types))
         return self.types.popleft()
 
+"""
+
 class Block:
-    def __init__(self,state):
+    def __init__(self):
         self.row = 0
         self.col = int(BOARD_COL * 0.5)
-        self.states = state
+        self.states = TYPES[random.randint(0, 6)]
 
     def minmaxRow(self):
         temp = [row[0] + self.row for row in self.states]
@@ -177,7 +179,7 @@ def down():  # 새블럭처리
         movingBlock.row -= 1
         setBoard()
         Board.checkRows(movingBlock)
-        movingBlock = Block(Q.popBlock())
+        movingBlock = Block()  ####################################################
 
 def fall():
     temp = movingBlock.row
@@ -213,8 +215,8 @@ def runGame():
         drawBlockOnBoard()
         drawMovingBlock(YELLOW, maxRow - movingBlock.row)
         drawMovingBlock(GREEN)
-        #drawMessage(f'SCORE: {Board.score} ',(500,100))
-        drawQueueBlock(GREEN)
+        drawMessage(f'SCORE: {Board.score} ',(500,100))
+        #drawQueueBlock(GREEN)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -242,7 +244,7 @@ def runGame():
                     movingBlock.row = maxRow
                     setBoard()
                     Board.checkRows(movingBlock)
-                    movingBlock = Block(Q.popBlock())
+                    movingBlock = Block()  ######################################
                     Board.score += ONE_BLOCK_SCORE
 
 
@@ -252,7 +254,7 @@ def runGame():
 
 def initGame():
     global GamePad, BLOCK, Clock
-    global Board, movingBlock, Q
+    global Board, movingBlock  #, Q
 
     pygame.init()
     GamePad = pygame.display.set_mode(DISPLAY_SIZE)
@@ -262,8 +264,8 @@ def initGame():
     pygame.display.set_icon(BLOCK)
     Clock = pygame.time.Clock()
     Board = Board()
-    Q = Blocks()
-    movingBlock = Block(Q.popBlock())
+    #Q = Blocks()
+    movingBlock = Block()
     set_interval(down, SEC)
 
 
