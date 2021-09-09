@@ -3,6 +3,7 @@ import random
 import sys
 import copy
 import threading
+from collections import deque
 
 
 
@@ -35,24 +36,25 @@ TYPES = [  # index 0~6
     [[0, 1], [0, 2], [1, 0], [1, 1]]  # 2-2 오른쪽위
 ]
 
-"""
-from collections import deque
+
+
+
 class Blocks:
     def __init__(self):
-        self.types = deque([TYPES[random.randint(0, 6)] * 3])
+        self.types = deque()
+        for _ in range(3):
+            self.types.append(TYPES[random.randint(0, 6)])
 
     def popBlock(self):
         self.types.append(TYPES[random.randint(0, 6)])
-        print(len(self.types))
         return self.types.popleft()
 
-"""
 
 class Block:
-    def __init__(self):
+    def __init__(self, state):
         self.row = 0
         self.col = int(BOARD_COL * 0.5)
-        self.states = TYPES[random.randint(0, 6)]
+        self.states = state
 
     def minmaxRow(self):
         temp = [row[0] + self.row for row in self.states]
@@ -126,14 +128,14 @@ def drawMessage(text, XY,size=20,color=BLACK):
     GamePad.blit(text, textpos)
     pygame.display.update()
 
-def drawObject2(col, row, type):
+def drawQObject(col, row, type):
     pygame.draw.rect(GamePad, type,
                      pygame.Rect((col * 20 + 500, row * 20 + 300), (20-2 , 20-2)))
 def drawQueueBlock(colorType):
     t = 0
     for q in Q.types:
         for y,x in q:
-            drawObject2(x, y+t, colorType)
+            drawQObject(x, y+t, colorType)
         t += 4
 
 def drawBoard():
@@ -179,7 +181,7 @@ def down():  # 새블럭처리
         movingBlock.row -= 1
         setBoard()
         Board.checkRows(movingBlock)
-        movingBlock = Block()  ####################################################
+        movingBlock = Block(Q.popBlock())  ####################################################
 
 def fall():
     temp = movingBlock.row
@@ -199,10 +201,9 @@ def rotate():
 
 
 
-
 def runGame():
     global GamePad, BLOCK, Clock
-    global Board, movingBlock
+    global Board, movingBlock, Q
 
 
     while True:
@@ -215,8 +216,8 @@ def runGame():
         drawBlockOnBoard()
         drawMovingBlock(YELLOW, maxRow - movingBlock.row)
         drawMovingBlock(GREEN)
+        drawQueueBlock(GREEN)
         drawMessage(f'SCORE: {Board.score} ',(500,100))
-        #drawQueueBlock(GREEN)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -244,7 +245,7 @@ def runGame():
                     movingBlock.row = maxRow
                     setBoard()
                     Board.checkRows(movingBlock)
-                    movingBlock = Block()  ######################################
+                    movingBlock = Block(Q.popBlock())  ######################################
                     Board.score += ONE_BLOCK_SCORE
 
 
@@ -254,7 +255,7 @@ def runGame():
 
 def initGame():
     global GamePad, BLOCK, Clock
-    global Board, movingBlock  #, Q
+    global Board, movingBlock, Q
 
     pygame.init()
     GamePad = pygame.display.set_mode(DISPLAY_SIZE)
@@ -264,9 +265,10 @@ def initGame():
     pygame.display.set_icon(BLOCK)
     Clock = pygame.time.Clock()
     Board = Board()
-    #Q = Blocks()
-    movingBlock = Block()
+    Q = Blocks()
+    movingBlock = Block(Q.popBlock())
     set_interval(down, SEC)
+
 
 
 
