@@ -33,7 +33,7 @@ TYPES = [  # index 0~6
     [[0, 0], [0, 1], [1, 1], [1, 2]],  # 2-2 왼쪽위
     [[0, 0], [0, 1], [0, 2], [1, 2]],  # ㅗ
     [[0, 0], [1, 0], [1, 1], [1, 2]],  # 1-3 왼쪽위
-    [[0, 1], [0, 2], [1, 0], [1, 1]]  # 2-2 오른쪽위
+    [[0, 1], [0, 2], [1, 0], [1, 1]]   # 2-2 오른쪽위
 ]
 
 
@@ -43,10 +43,10 @@ class Blocks:
     def __init__(self):
         self.types = deque()
         for _ in range(3):
-            self.types.append(TYPES[random.randint(0, 6)])
+            self.types.append(copy.deepcopy(TYPES[random.randint(0, 6)]))
 
     def popBlock(self):
-        self.types.append(TYPES[random.randint(0, 6)])
+        self.types.append(copy.deepcopy(TYPES[random.randint(0, 6)]))
         return self.types.popleft()
 
 
@@ -130,20 +130,20 @@ def drawMessage(text, XY,size=20,color=BLACK):
 
 def drawQObject(col, row, type):
     pygame.draw.rect(GamePad, type,
-                     pygame.Rect((col * 20 + 500, row * 20 + 300), (20-2 , 20-2)))
+                     pygame.Rect((col * 20 + 480, row * 20 + 200), (20-2 , 20-2)))
+
 def drawQueueBlock(colorType):
     t = 0
     for q in Q.types:
         for y,x in q:
             drawQObject(x, y+t, colorType)
-        t += 4
+        t += 5
 
 def drawBoard():
     for i in range(0, PAD_SIZE[0] + 1, 40):
         pygame.draw.line(GamePad, BLACK, (i, 0), (i, PAD_SIZE[1]), 2)
         pygame.draw.line(GamePad, BLACK, (0, i), (PAD_SIZE[0], i), 2)
         pygame.draw.line(GamePad, BLACK, (0, PAD_SIZE[0] + i), (PAD_SIZE[0], PAD_SIZE[0] + i), 2)
-
 
 def checkInBoard():
     for block in movingBlock.states:
@@ -172,7 +172,7 @@ def checkFallable(temp):
     return True
 
 
-def down():  # 새블럭처리
+def down():  # 현재 블럭이 착지될 것인가.
     global movingBlock, Q
 
     movingBlock.row += 1
@@ -181,7 +181,7 @@ def down():  # 새블럭처리
         movingBlock.row -= 1
         setBoard()
         Board.checkRows(movingBlock)
-        movingBlock = Block(Q.popBlock())  ####################################################
+        movingBlock = Block(Q.popBlock())
 
 def fall():
     temp = movingBlock.row
@@ -245,7 +245,7 @@ def runGame():
                     movingBlock.row = maxRow
                     setBoard()
                     Board.checkRows(movingBlock)
-                    movingBlock = Block(Q.popBlock())  ######################################
+                    movingBlock = Block(Q.popBlock())
                     Board.score += ONE_BLOCK_SCORE
 
 
