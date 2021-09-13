@@ -3,7 +3,7 @@ import random
 import sys
 import copy
 import time
-import threading
+from threading import Timer
 from collections import deque
 
 
@@ -22,6 +22,7 @@ BLOCK_SIZE = 40
 BOARD_ROW = 20 + INVISABLE_BOARD
 BOARD_COL = 10
 
+NEXT_LEVEL = 200
 ONE_LINE_SCORE = 200
 ONE_BLOCK_SCORE = 10
 
@@ -38,6 +39,11 @@ TYPES = [  # index 0~6
 
 
 
+class Speed(Timer):
+    def run(self):
+        while not self.finished.wait(self.interval):
+            self.function(*self.args, **self.kwargs)
+
 class Blocks:
     def __init__(self):
         self.types = deque()
@@ -47,7 +53,6 @@ class Blocks:
     def popBlock(self):
         self.types.append(copy.deepcopy(TYPES[random.randint(0, 6)]))
         return self.types.popleft()
-
 
 class Block:
     def __init__(self, state):
@@ -66,7 +71,9 @@ class gameBoard:
         self.index = [False] * (20 + INVISABLE_BOARD)
         self.SEC = 1
         self.score = 0
-        self.nextLevel = 500
+        self.nextLevel = NEXT_LEVEL
+        self.speed = Speed(self.SEC, down)
+        self.speed.start()
 
     def checkIsFull(self, row):
         if self.states[row] == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]:
@@ -74,10 +81,10 @@ class gameBoard:
         return False
 
     def speedUP(self):
-        global Speed
         self.SEC *= 0.9
-        Speed.join()
-        Speed = set_interval(down, self.SEC)
+        self.speed.cancel()
+        self.speed = Speed(self.SEC, down)
+        self.speed.start()
 
     def checkRows(self, movingBlock):
         minRow, maxRow = movingBlock.minmaxRow()
@@ -91,26 +98,16 @@ class gameBoard:
         self.score += cnt * ONE_LINE_SCORE
 
 
-def set_interval(func, sec):  # import threading
-    def func_wrapper():
-        set_interval(func, sec)
-        func()
-        print(sec)
 
-    t = threading.Timer(sec, func_wrapper)
-    t.start()
-    return t
 
 def setBoard():
     for rc in movingBlock.states:
         Board.states[rc[0] + movingBlock.row][rc[1] + movingBlock.col] = 1
         Board.index[rc[0] + movingBlock.row] = True # 여기 보드에서 손봐줘야함
 
-
 def drawObject(col, row, type):
     pygame.draw.rect(GamePad, type,
                      pygame.Rect((col * BLOCK_SIZE + 2, row * BLOCK_SIZE + 2), (BLOCK_SIZE - 2, BLOCK_SIZE - 2)))
-
 
 def drawBlockOnBoard(color=GREEN):
     for idx, state in enumerate(Board.index):
@@ -151,6 +148,7 @@ def drawBoard():
         pygame.draw.line(GamePad, BLACK, (0, i), (PAD_SIZE[0], i), 2)
         pygame.draw.line(GamePad, BLACK, (0, PAD_SIZE[0] + i), (PAD_SIZE[0], PAD_SIZE[0] + i), 2)
 
+
 def checkInBoard():
     for block in movingBlock.states:
         row = block[0] + movingBlock.row
@@ -189,10 +187,8 @@ def down():  # 현재 블럭이 착지될 것인가.
         Board.checkRows(movingBlock)
         movingBlock = Block(Q.popBlock())
         if Board.score > Board.nextLevel:
-            print(Board.SEC)
             Board.speedUP()
-            Board.nextLevel += 500
-
+            Board.nextLevel += NEXT_LEVEL
 
 def fall():
     temp = movingBlock.row
@@ -214,19 +210,18 @@ def rotate():
 
 def runGame():
     global GamePad, BLOCK, Clock
-    global Board, movingBlock, Q, Speed
+    global Board, movingBlock, Q
 
 
     while True:
         maxRow = fall()
         if not maxRow:
-            Speed.join()
+            Board.speed.cancel()
             GamePad.fill(WHITE)
             drawMessage('GAME OVER', (DISPLAY_SIZE[0]//2, DISPLAY_SIZE[1]//2),size=50)
             time.sleep(3)
             Board = gameBoard()
             movingBlock = Block(Q.popBlock())
-            Speed = set_interval(down, Board.SEC)
             continue
 
         GamePad.fill(WHITE)
@@ -268,7 +263,7 @@ def runGame():
                     if Board.score > Board.nextLevel:
                         print(Board.SEC)
                         Board.speedUP()
-                        Board.nextLevel += 500
+                        Board.nextLevel += NEXT_LEVEL
 
 
         pygame.display.update()
@@ -277,7 +272,7 @@ def runGame():
 
 def initGame():
     global GamePad, BLOCK, Clock
-    global Board, movingBlock, Q, Speed
+    global Board, movingBlock, Q
 
     pygame.init()
     GamePad = pygame.display.set_mode(DISPLAY_SIZE)
@@ -289,10 +284,32 @@ def initGame():
     Board = gameBoard()
     Q = Blocks()
     movingBlock = Block(Q.popBlock())
-    Speed = set_interval(down, Board.SEC)
 
 
 
 
 initGame()
 runGame()
+
+
+
+
+"""
+threading 관련 공부해야함..
+
+from threading import Timer
+import time
+
+def hello():
+    print('hello')
+
+class RepeatTimer(Timer):
+    def run(self):
+        while not self.finished.wait(self.interval):
+            self.function(*self.args, **self.kwargs)
+
+timer = RepeatTimer(1, hello)
+timer.start()
+time.sleep(3)
+timer.cancel()
+"""
