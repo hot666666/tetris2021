@@ -66,6 +66,7 @@ class gameBoard:
         self.index = [False] * (20 + INVISABLE_BOARD)
         self.SEC = 1
         self.score = 0
+        self.nextLevel = 500
 
     def checkIsFull(self, row):
         if self.states[row] == [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]:
@@ -94,6 +95,7 @@ def set_interval(func, sec):  # import threading
     def func_wrapper():
         set_interval(func, sec)
         func()
+        print(sec)
 
     t = threading.Timer(sec, func_wrapper)
     t.start()
@@ -186,9 +188,10 @@ def down():  # 현재 블럭이 착지될 것인가.
         setBoard()
         Board.checkRows(movingBlock)
         movingBlock = Block(Q.popBlock())
-        if Board.score > 500:
+        if Board.score > Board.nextLevel:
             print(Board.SEC)
             Board.speedUP()
+            Board.nextLevel += 500
 
 
 def fall():
@@ -211,17 +214,19 @@ def rotate():
 
 def runGame():
     global GamePad, BLOCK, Clock
-    global Board, movingBlock, Q
+    global Board, movingBlock, Q, Speed
 
 
     while True:
         maxRow = fall()
         if not maxRow:
+            Speed.join()
             GamePad.fill(WHITE)
             drawMessage('GAME OVER', (DISPLAY_SIZE[0]//2, DISPLAY_SIZE[1]//2),size=50)
             time.sleep(3)
             Board = gameBoard()
             movingBlock = Block(Q.popBlock())
+            Speed = set_interval(down, Board.SEC)
             continue
 
         GamePad.fill(WHITE)
@@ -260,6 +265,10 @@ def runGame():
                     Board.checkRows(movingBlock)
                     movingBlock = Block(Q.popBlock())
                     Board.score += ONE_BLOCK_SCORE
+                    if Board.score > Board.nextLevel:
+                        print(Board.SEC)
+                        Board.speedUP()
+                        Board.nextLevel += 500
 
 
         pygame.display.update()
