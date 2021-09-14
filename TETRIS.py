@@ -22,7 +22,8 @@ BLOCK_SIZE = 40
 BOARD_ROW = 20 + INVISABLE_BOARD
 BOARD_COL = 10
 
-NEXT_LEVEL = 200
+NEXT_LEVEL = 500
+SPEED_UP_MULTIPLE = 0.9
 ONE_LINE_SCORE = 200
 ONE_BLOCK_SCORE = 10
 
@@ -68,7 +69,7 @@ class Block:
 class gameBoard:
     def __init__(self):
         self.states = [[0] * 10 for _ in range(20+INVISABLE_BOARD)]
-        self.index = [False] * (20 + INVISABLE_BOARD)
+        #self.index = [False] * (20 + INVISABLE_BOARD)
         self.SEC = 1
         self.score = 0
         self.nextLevel = NEXT_LEVEL
@@ -81,7 +82,7 @@ class gameBoard:
         return False
 
     def speedUP(self):
-        self.SEC *= 0.9
+        self.SEC *= SPEED_UP_MULTIPLE
         self.speed.cancel()
         self.speed = Speed(self.SEC, down)
         self.speed.start()
@@ -103,18 +104,16 @@ class gameBoard:
 def setBoard():
     for rc in movingBlock.states:
         Board.states[rc[0] + movingBlock.row][rc[1] + movingBlock.col] = 1
-        Board.index[rc[0] + movingBlock.row] = True # 여기 보드에서 손봐줘야함
 
 def drawObject(col, row, type):
     pygame.draw.rect(GamePad, type,
                      pygame.Rect((col * BLOCK_SIZE + 2, row * BLOCK_SIZE + 2), (BLOCK_SIZE - 2, BLOCK_SIZE - 2)))
 
 def drawBlockOnBoard(color=GREEN):
-    for idx, state in enumerate(Board.index):
-        if state:
-            for col in range(0, BOARD_COL):
-                if Board.states[idx][col] == 1:
-                    drawObject(col, idx - INVISABLE_BOARD, color)
+    for row in range(0, BOARD_ROW):
+        for col in range(0, BOARD_COL):
+            if Board.states[row][col] == 1:
+                drawObject(col, row - INVISABLE_BOARD, color)
 
 def drawMovingBlock(colorType, temp=0):  # temp는 낙하지점을 더한 row값
     for y, x in movingBlock.states:
@@ -205,6 +204,16 @@ def rotate():
     for rc in movingBlock.states:
         rc[1] += maxRow
 
+    return maxRow
+
+def rightSideRotate(movable):
+    for _ in range(movable):
+        for rc in movingBlock.states:
+            rc[1] -= 1
+        if checkInBoard():
+            return True
+    return False
+
 
 
 
@@ -218,7 +227,7 @@ def runGame():
         if not maxRow:
             Board.speed.cancel()
             GamePad.fill(WHITE)
-            drawMessage('GAME OVER', (DISPLAY_SIZE[0]//2, DISPLAY_SIZE[1]//2),size=50)
+            drawMessage('GAME OVER', (DISPLAY_SIZE[0]//2, DISPLAY_SIZE[1]//2), size=50)
             time.sleep(3)
             Board = gameBoard()
             movingBlock = Block(Q.popBlock())
@@ -234,7 +243,8 @@ def runGame():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                sys.exit()  # theading 종료도 해줘야 꺼질듯
+                Board.speed.cancel()
+                sys.exit()
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
@@ -247,9 +257,10 @@ def runGame():
                         movingBlock.col -= 1
                 if event.key == pygame.K_UP:
                     temp = copy.deepcopy(movingBlock.states)
-                    rotate()
+                    movable = rotate()
                     if not checkInBoard():
-                        movingBlock.states = temp
+                        if not rightSideRotate(movable+3):
+                            movingBlock.states = temp
                 if event.key == pygame.K_DOWN:
                     movingBlock.row += 1
                     if not checkInBoard():
@@ -261,7 +272,6 @@ def runGame():
                     movingBlock = Block(Q.popBlock())
                     Board.score += ONE_BLOCK_SCORE
                     if Board.score > Board.nextLevel:
-                        print(Board.SEC)
                         Board.speedUP()
                         Board.nextLevel += NEXT_LEVEL
 
@@ -273,6 +283,7 @@ def runGame():
 def initGame():
     global GamePad, BLOCK, Clock
     global Board, movingBlock, Q
+
 
     pygame.init()
     GamePad = pygame.display.set_mode(DISPLAY_SIZE)
