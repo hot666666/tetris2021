@@ -1,5 +1,5 @@
 import pickle
-
+import time
 import pygame
 from sample_client import Network
 
@@ -35,9 +35,17 @@ rectangle2.center = (225 + 400, 225)  # Set the initial position of the rectangl
 color2 = pygame.Color('blue')
 
 n = Network()
-player = int(n.getP())
-print("You are player", player)
-temp = None
+
+# 준비가 되었는지 확인하고 진행되어야함
+while True:
+    data = n.client.recv(16)
+    if not data:
+        continue
+    if data == b"start":
+        print("Game started!")
+        break
+    print(data)
+    time.sleep(0.5)
 
 # Run the game loop
 running = True
@@ -61,7 +69,7 @@ while running:
                 pass
 
             n.send([rectangle.center, rectangle.size])
-            temp = n.client.recv(2048)
+            temp = n.client.recv(1024)
             if temp:
                 temp = pickle.loads(temp)
                 rectangle2.center, rectangle2.size = temp

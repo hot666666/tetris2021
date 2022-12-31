@@ -8,17 +8,11 @@ class Network:
         self.server = "localhost"
         self.port = 22222
         self.addr = (self.server, self.port)
-        self.p = self.connect()
 
-    def getP(self):
-        return self.p
-
-    def connect(self):
         try:
             self.client.connect(self.addr)
-            return self.client.recv(2048).decode()
         except:
-            pass
+            print('connection error')
 
     def send(self, data):
         try:
