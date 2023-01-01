@@ -1,14 +1,21 @@
+import time
 import pygame
 
 from draw import *
 from game import *
 from file import *
+from network import *
 
 
-def main(win):
-    last_score = max_score()
+def main(win, conn):
+    global grid, score
+    global pgrid, pscore
+
+    # last_score = max_score()
+
     locked_positions = {}
     grid = create_grid(locked_positions)
+    pgrid = create_grid(locked_positions)
 
     change_piece = False
     run = True
@@ -18,7 +25,7 @@ def main(win):
     fall_time = 0
     fall_speed = 0.27
     level_time = 0
-    score = 0
+    score = pscore = 0
 
     left_surface = pygame.Surface((600, 1000))
     right_surface = pygame.Surface((600, 1000))
@@ -89,13 +96,13 @@ def main(win):
         win.blit(left_surface, (0, 0))
 
         right_surface.fill((0, 0, 0))
-        draw_block(pygame, right_inner_surface, grid, is_partner=True)
+        draw_block(pygame, right_inner_surface, pgrid, is_partner=True)
         draw_grid(pygame, right_inner_surface, is_partner=True)
         right_inner_surface.set_alpha(64)
         right_surface.blit(right_inner_surface, (150-2, 200-2))
         win.blit(right_surface, (600, 0))
 
-        draw_texts(pygame, win, score, last_score)
+        draw_texts(pygame, win, score, pscore)
         pygame.display.flip()
 
         if check_lost(locked_positions):
@@ -106,23 +113,48 @@ def main(win):
             update_score(score)
 
 
+def threaded_func(conn):
+    global grid, score
+    global pgrid, pscore
+    while True:
+        time.sleep(0.15)
+        conn.send([score, grid])
+        received_data = conn.recv()
+        pscore, pgrid = received_data
+
+
 def main_menu(win):
     run = True
 
     pygame.display.set_caption('Tetris')
     pygame.font.init()
+    win.fill((0, 0, 0))
+    draw_text_middle(pygame, win, 'Press Any Key To Play',
+                     60, (255, 255, 255))
+    pygame.display.update()
+
+    # Create custom socket connection
+    conn = MySocket()
 
     while run:
-        win.fill((0, 0, 0))
-        draw_text_middle(pygame, win, 'Press Any Key To Play',
-                         60, (255, 255, 255))
-        pygame.display.update()
-
+        data = conn.client.recv(16)  # pickle없이 그냥처리
+        if not data:
+            continue
+        if data == b"start":
+            print("Game start!")
+            start_new_thread(threaded_func, (conn,))
+            main(win, conn)
+        time.sleep(1)
+        '''
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
             if event.type == pygame.KEYDOWN:
-                main(win)
+                print("Game start!")
+                start_new_thread(threaded_func, (conn,))
+                main(win, conn)
+        
+        '''
 
     pygame.display.quit()
 
