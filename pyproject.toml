@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "tetris2024"
+version = "0.1.0"
+description = "Simple Tetris Game with Python"
+authors = ["hot666666 <hotcs6@naver.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "3.13"
+pillow = "^11.0.0"
+numpy = "^2.1.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
