@@ -1,5 +1,5 @@
 import numpy as np
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageDraw
 
 from tetris2024.core.game import GameStates
 
@@ -55,11 +55,11 @@ class TKRenderer:
             (scale, scale, 1), dtype=np.uint8))
         return scaled_ndarr
 
-    def _render(self, game_states: GameStates):
+    def render(self, game_states: GameStates):
         # 보드 배열을 만들고 현재 블록을 추가
         board = self.get_board_ndarray(game_states.board)
 
-        # 현재 블록 배열과 위치
+        # 현재 블록 배열과 위치를 보드에 추가
         piece = self.get_piece_ndarray(game_states.piece)
         pos = self.get_scaled_piece_pos(piece, game_states.x, game_states.y)
         self.update_board_with(board, piece, pos)
@@ -80,11 +80,6 @@ class TKRenderer:
         self.draw_header_score(game_img, game_states.score)
 
         return game_img
-
-    def render(self, game_states: GameStates):
-        game_img = self._render(game_states)
-        tk_game_img = ImageTk.PhotoImage(game_img)
-        return tk_game_img
 
     def draw_header_score(self, game_img, score):
         draw = ImageDraw.Draw(game_img)
