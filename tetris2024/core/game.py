@@ -57,8 +57,6 @@ class Game:
     ]
     # 드랍 조각을 표시할 값
     DROP_INDICATOR = 8
-    # 게임 액션
-    actions = GameActions()
 
     def __init__(self, width=10, height=20, block_size=30, randomizer=BagRandomizer()):
         self.width = width
@@ -96,26 +94,26 @@ class Game:
 
         self.gameover = False
 
-    def step(self, action):
+    def step(self, action: GameActions):
         """action에 따라 게임을 진행하고, (게임 종료, 안착 여부)를 반환하는 메서드"""
 
         is_landed = False
 
         # piece에 이동방향을 미리 적용하여 check_collision 메서드를 통해 충돌을 확인한 후 이동방향 적용
-        if action == 0:
+        if action == GameActions.move_left:
             if not self.check_collision(self.piece, self.x - 1, self.y):
                 self.x -= 1
-        elif action == 1:
+        elif action == GameActions.move_right:
             if not self.check_collision(self.piece, self.x + 1, self.y):
                 self.x += 1
-        elif action == 2:
+        elif action == GameActions.move_down:
             if not self.check_collision(self.piece, self.x, self.y + 1):
                 self.y += 1
-        elif action == 3:
+        elif action == GameActions.rotate:
             rotated_piece = self.get_rotated_piece(self.piece)
             if not self.check_collision(rotated_piece, self.x, self.y):
                 self.piece = rotated_piece
-        elif action == 4:
+        elif action == GameActions.hard_drop:
             while not self.check_collision(self.piece, self.x, self.y + 1):
                 self.y += 1
 
