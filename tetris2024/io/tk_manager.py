@@ -1,8 +1,19 @@
 import tkinter as tk
+from PIL import ImageTk
+
+from tetris2024.core.game import GameActions
 
 
-class UIManager:
+class TKManager:
     """tkinter를 이용한 UI 관리(+ 키 입력 바인딩) 클래스"""
+
+    key_mapping = {
+        "Up": GameActions.rotate,
+        "Down": GameActions.move_down,
+        "Left": GameActions.move_left,
+        "Right": GameActions.move_right,
+        "space": GameActions.hard_drop,
+    }
 
     def __init__(self, width, height, block_size, input_event_queue):
         self.root = tk.Tk()
@@ -22,9 +33,10 @@ class UIManager:
         self.root.after(0, update_callback)
         self.root.mainloop()
 
-    def update_canvas(self, tk_image):
+    def update_canvas(self, image):
         """이미지 배열을 캔버스에 그리는 메서드"""
 
+        tk_image = ImageTk.PhotoImage(image)
         self.canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
         self.canvas.image = tk_image
 
