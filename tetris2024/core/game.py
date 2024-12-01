@@ -58,10 +58,9 @@ class Game:
     # 드랍 조각을 표시할 값
     DROP_INDICATOR = 8
 
-    def __init__(self, width=10, height=20, block_size=30, randomizer=BagRandomizer()):
+    def __init__(self, width=10, height=20, randomizer=BagRandomizer()):
         self.width = width
         self.height = height
-        self.block_size = block_size
         self.queue = TetrominoQueue(randomizer=randomizer)
 
         self.reset()

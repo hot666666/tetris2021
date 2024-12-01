@@ -2,14 +2,14 @@ import argparse
 
 from tetris2024.game_loop import GameLoop
 from tetris2024.core.game import Game
-from tetris2024.graphic.renderer import TKRenderer
+from tetris2024.graphic.renderer import Renderer
 from tetris2024.io.input_event_queue import InputEventQueue
 from tetris2024.io.tk_manager import TKManager
 
 
 def main(w, h, bs):
-    game = Game(width=w, height=h, block_size=bs)
-    renderer = TKRenderer(
+    game = Game(width=w, height=h)
+    renderer = Renderer(
         width=w, height=h, block_size=bs)
     input_event_queue = InputEventQueue()
     tk_manager = TKManager(

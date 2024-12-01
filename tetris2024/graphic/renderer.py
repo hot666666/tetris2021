@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw
 from tetris2024.core.game import GameStates
 
 
-class TKRenderer:
+class Renderer:
     """게임 이미지를 만들어주는 클래스"""
 
     PIECE_COLORS = [
