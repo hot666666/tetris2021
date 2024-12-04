@@ -94,22 +94,17 @@ class Renderer:
             piece > 0, piece, board[top:bottom, left:right]
         )
 
-    def get_board_ndarray(self, board):
-        board = self.get_scaled_RGB_arr(board)
-
         # 격자 추가
         board[[i * self.block_size for i in range(self.height)], :, :] = 0
         board[:, [i * self.block_size for i in range(self.width)], :] = 0
 
+    def get_board_ndarray(self, board):
+        board = self.get_scaled_RGB_arr(board)
+
         return board
 
     def get_piece_ndarray(self, piece):
-        nr, nc = len(piece), len(piece[0])
         piece = self.get_scaled_RGB_arr(piece)
-
-        # 격자 추가
-        piece[[i * self.block_size for i in range(1, nr)], :, :] = 0
-        piece[:, [i * self.block_size for i in range(1, nc)], :] = 0
 
         return piece
 
