@@ -1,7 +1,5 @@
 import numpy as np
-from PIL import Image, ImageDraw
-
-from tetris2024.core.game import GameStates
+from PIL import Image, ImageDraw, ImageTk
 
 
 class Renderer:
@@ -23,7 +21,11 @@ class Renderer:
 
     TEXT_COLOR = (255, 255, 255)
 
-    def __init__(self, width=10, height=20,  block_size=30):
+    def __init__(self, width=10, height=20,  block_size=30, canvas=None):
+        self.canvas = canvas
+        self.image_id = None
+        self.photo_image = None
+
         self.width = width
         self.height = height
         self.block_size = block_size
@@ -55,7 +57,21 @@ class Renderer:
             (scale, scale, 1), dtype=np.uint8))
         return scaled_ndarr
 
-    def render(self, game_states: GameStates):
+    def render_piece(self, game_states):
+        piece = self.get_piece_ndarray(game_states.piece)
+        piece_image = Image.fromarray(piece, "RGB")
+        return piece_image
+
+    def render_background(self, game_states):
+        board = self.get_board_ndarray(game_states.board)
+        next_piece = self.get_next_piece_ndarray(game_states.next_piece)
+        header = self.get_header_ndarray(next_piece)
+        background = np.vstack((header, board))
+        background_img = Image.fromarray(background, "RGB")
+        self.draw_header_score(background_img, game_states.score)
+        return background_img
+
+    def render(self, game_states):
         # 보드 배열을 만들고 현재 블록을 추가
         board = self.get_board_ndarray(game_states.board)
 
@@ -75,11 +91,19 @@ class Renderer:
 
         # RGB 배열 → PIL 이미지 변환
         game_img = Image.fromarray(game, "RGB")
-
         # 점수 표시
         self.draw_header_score(game_img, game_states.score)
 
-        return game_img
+        self.photo_image = ImageTk.PhotoImage(game_img)
+
+        # Canvas에 업데이트
+        if self.image_id is None:
+            # 처음 그릴 때는 이미지 ID를 저장
+            self.image_id = self.canvas.create_image(
+                0, 0, anchor="nw", image=self.photo_image)
+        else:
+            # 이후에는 이미지를 업데이트
+            self.canvas.itemconfig(self.image_id, image=self.photo_image)
 
     def draw_header_score(self, game_img, score):
         draw = ImageDraw.Draw(game_img)

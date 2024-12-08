@@ -2,23 +2,19 @@ import argparse
 
 from tetris2024.game_loop import GameLoop
 from tetris2024.core.game import Game
-from tetris2024.graphic.renderer import Renderer
 from tetris2024.io.input_event_queue import InputEventQueue
 from tetris2024.io.tk_manager import TKManager
 
 
 def main(w, h, bs):
-    game = Game(width=w, height=h)
-    renderer = Renderer(
-        width=w, height=h, block_size=bs)
     input_event_queue = InputEventQueue()
     tk_manager = TKManager(
         width=w, height=h, block_size=bs, input_event_queue=input_event_queue
     )
+    game = Game(width=w, height=h, canvas=tk_manager.canvas)
 
     game_loop = GameLoop(
         game=game,
-        renderer=renderer,
         input_event_queue=input_event_queue,
         tk_manager=tk_manager,
         drop_interval=1.0

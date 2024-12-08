@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from tetris2024.core.randomizer import BagRandomizer
 from tetris2024.core.tetromino_queue import TetrominoQueue
+from tetris2024.graphic.renderer import Renderer
 
 
 @dataclass(frozen=True)
@@ -58,10 +59,12 @@ class Game:
     # 드랍 조각을 표시할 값
     DROP_INDICATOR = 8
 
-    def __init__(self, width=10, height=20, randomizer=BagRandomizer()):
+    def __init__(self, width=10, height=20, canvas=None, randomizer=BagRandomizer()):
         self.width = width
         self.height = height
         self.queue = TetrominoQueue(randomizer=randomizer)
+        self.renderer = Renderer(
+            width=width, height=height, block_size=30, canvas=canvas)
 
         self.reset()
 
@@ -113,12 +116,14 @@ class Game:
             if not self.check_collision(rotated_piece, self.x, self.y):
                 self.piece = rotated_piece
         elif action == GameActions.hard_drop:
-            while not self.check_collision(self.piece, self.x, self.y + 1):
-                self.y += 1
+            self.animate_hard_drop()  # 애니메이션 루프 호출
+            is_landed = True
+            return self.gameover, is_landed
 
         # 현재 piece가 보드 상단을 벗어나는 경우 = 게임오버
         if self.truncate_overflow_piece(self.piece, self.x, self.y):
             self.gameover = True
+            is_landed = True
 
             self.board = self.get_board_with_piece(self.piece, self.x, self.y)
             lines_cleared, self.board = self.clear_full_rows(self.board)
@@ -146,6 +151,23 @@ class Game:
         while not self.check_collision(self.piece, self.x, dropped_y + 1):
             dropped_y += 1
         return dropped_y
+
+    def animate_hard_drop(self):
+        def drop_step():
+            if not self.check_collision(self.piece, self.x, self.y + 1):
+                self.y += 1
+                self.renderer.render(self.get_game_states())
+                self.renderer.canvas.after(16, drop_step)
+            else:
+                # 블록이 바닥에 도달했을 때
+                self.board = self.get_board_with_piece(
+                    self.piece, self.x, self.y)
+                lines_cleared, self.board = self.clear_full_rows(self.board)
+                self.cleared_lines += lines_cleared
+                self.score += self.get_reward(lines_cleared)
+                self.spawn_next_piece()
+
+        drop_step()
 
     def get_game_states(self) -> GameStates:
         """랜더링에 필요한 게임 상태를 반환하는 메서드, board, piece는 복사본을 반환"""
