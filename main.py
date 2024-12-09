@@ -7,17 +7,14 @@ from tetris2024.io.tk_manager import TKManager
 
 
 def main(w, h, bs):
-    input_event_queue = InputEventQueue()
     tk_manager = TKManager(
-        width=w, height=h, block_size=bs, input_event_queue=input_event_queue
+        width=w, height=h, block_size=bs, input_event_queue=InputEventQueue()
     )
     game = Game(width=w, height=h, canvas=tk_manager.canvas)
 
     game_loop = GameLoop(
         game=game,
-        input_event_queue=input_event_queue,
         tk_manager=tk_manager,
-        drop_interval=1.0
     )
 
     tk_manager.start_ui_loop(game_loop.update)

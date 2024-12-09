@@ -2,9 +2,8 @@ import time
 
 
 class GameLoop:
-    def __init__(self, game, input_event_queue, tk_manager, drop_interval=1.0):
+    def __init__(self, game, tk_manager, drop_interval=1.0):
         self.game = game
-        self.input_event_queue = input_event_queue
         self.tk_manager = tk_manager
         self.drop_interval = drop_interval
         self.last_drop_time = time.time()
@@ -16,7 +15,7 @@ class GameLoop:
         is_landed = False
 
         # 1. 입력 처리
-        user_input = self.input_event_queue.pop()
+        user_input = self.tk_manager.input_event_queue.pop()
 
         if user_input not in self.tk_manager.key_mapping:
             user_input = None
@@ -39,11 +38,9 @@ class GameLoop:
 
         # 3. UI(canvas) 업데이트
         if not gameover:
-            if not is_landed:
-                self.tk_manager.canvas.after(16, self.update)
-            else:
-                self.tk_manager.canvas.after(800, self.update)
-                self.input_event_queue.clear()
+            self.tk_manager.input_event_queue.clear()
+            delay = 16 if not is_landed else 800
+            self.tk_manager.canvas.after(delay, self.update)
         else:
             self.tk_manager.display_game_over()
             self.tk_manager.root.after(2000, self.tk_manager.close_window)
