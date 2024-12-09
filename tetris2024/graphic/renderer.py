@@ -1,5 +1,5 @@
 import numpy as np
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageDraw, ImageTk, ImageFont
 
 
 class Renderer:
@@ -20,6 +20,9 @@ class Renderer:
     HEADER_COLOR = (0, 0, 0)
 
     TEXT_COLOR = (255, 255, 255)
+
+    FONT = ImageFont.truetype(
+        "./tetris2024/graphic/arial.ttf", size=20)
 
     def __init__(self, width=10, height=20,  block_size=30, canvas=None):
         self.canvas = canvas
@@ -95,7 +98,7 @@ class Renderer:
         draw = ImageDraw.Draw(game_img)
         # font를 설정하면 크기 조절 가능
         draw.text((self.header_left_padding, self.header_left_padding),
-                  f"Score: {score}", fill=self.TEXT_COLOR)
+                  f"Score: {score}", fill=self.TEXT_COLOR, font=self.FONT)
 
     def update_board_with(self, board, piece, pos):
         # 보드에 현재 블록 추가
