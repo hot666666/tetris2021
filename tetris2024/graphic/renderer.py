@@ -57,20 +57,6 @@ class Renderer:
             (scale, scale, 1), dtype=np.uint8))
         return scaled_ndarr
 
-    def render_piece(self, game_states):
-        piece = self.get_piece_ndarray(game_states.piece)
-        piece_image = Image.fromarray(piece, "RGB")
-        return piece_image
-
-    def render_background(self, game_states):
-        board = self.get_board_ndarray(game_states.board)
-        next_piece = self.get_next_piece_ndarray(game_states.next_piece)
-        header = self.get_header_ndarray(next_piece)
-        background = np.vstack((header, board))
-        background_img = Image.fromarray(background, "RGB")
-        self.draw_header_score(background_img, game_states.score)
-        return background_img
-
     def render(self, game_states):
         # 보드 배열을 만들고 현재 블록을 추가
         board = self.get_board_ndarray(game_states.board)
@@ -140,8 +126,7 @@ class Renderer:
             dtype=np.uint8)
 
         # 다음 블록 이미지 추가
-        next_piece_x = (self.width-self.header_height) * \
-            self.block_size-self.header_right_padding
+        next_piece_x = (self.width-self.header_height) * self.block_size
         header[0:next_piece.shape[0],
                next_piece_x:next_piece_x+next_piece.shape[1]] = next_piece
 
@@ -154,7 +139,12 @@ class Renderer:
         # 5x5로 패딩
         padded_piece = np.zeros((5, 5), dtype=int)
         piece_h, piece_w = len(next_piece), len(next_piece[0])
-        padded_piece[1:1+piece_h, 1:1+piece_w] = next_piece
+        if piece_w == 4:
+            padded_piece[1:1+piece_h, 0:piece_w] = next_piece
+        elif piece_w == 2:
+            padded_piece[1:1+piece_h, 2:2+piece_w] = next_piece
+        else:
+            padded_piece[1:1+piece_h, 1:1+piece_w] = next_piece
 
         next_piece = self.get_scaled_RGB_arr(padded_piece)
         return next_piece
