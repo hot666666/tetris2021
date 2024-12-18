@@ -219,8 +219,6 @@ class Game:
         last_collision_row = -1
         for _y in range(len(piece)):
             for _x in range(len(piece[_y])):
-                if piece[_y][_x] == 0:
-                    continue
                 if self.board[y+_y][x+_x] > 0:
                     if _y > last_collision_row:
                         last_collision_row = _y
@@ -233,8 +231,6 @@ class Game:
                 del piece[0]
                 for y in range(len(piece)):
                     for x in range(len(piece[y])):
-                        if piece[_y][_x] == 0:
-                            continue
                         if self.board[y + _y][x + _x] > 0 and _y > last_collision_row:
                             last_collision_row = _y
 
