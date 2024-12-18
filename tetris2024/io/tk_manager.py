@@ -29,7 +29,7 @@ class TKManager:
         self.root.bind(
             "<KeyPress>", lambda e: input_event_queue.push(e.keysym))
 
-    def start_ui_loop(self, update_callback):
+    def start_tk_loop(self, update_callback):
         """UI 루프를 시작하는 메서드"""
         self.root.after(0, update_callback)
         self.root.mainloop()
