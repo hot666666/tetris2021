@@ -18,6 +18,7 @@ class TKManager:
     def __init__(self, width, height, block_size, input_event_queue):
         self.root = tk.Tk()
         self.root.title("Tetris2024")
+        self.input_event_queue = input_event_queue
         self.canvas = tk.Canvas(
             self.root,
             width=width * block_size,
