@@ -44,3 +44,6 @@ class GameLoop:
         else:
             self.tk_manager.display_game_over()
             self.tk_manager.root.after(2000, self.tk_manager.close_window)
+
+    def run(self):
+        self.tk_manager.start_tk_loop(self.update)

@@ -17,7 +17,7 @@ def main(w, h, bs):
         tk_manager=tk_manager,
     )
 
-    tk_manager.start_ui_loop(game_loop.update)
+    game_loop.run()
 
 
 if __name__ == "__main__":
