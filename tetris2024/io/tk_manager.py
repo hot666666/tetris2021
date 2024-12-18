@@ -18,6 +18,7 @@ class TKManager:
     def __init__(self, width, height, block_size, input_event_queue):
         self.root = tk.Tk()
         self.root.title("Tetris2024")
+        self.input_event_queue = input_event_queue
         self.canvas = tk.Canvas(
             self.root,
             width=width * block_size,
@@ -28,7 +29,7 @@ class TKManager:
         self.root.bind(
             "<KeyPress>", lambda e: input_event_queue.push(e.keysym))
 
-    def start_ui_loop(self, update_callback):
+    def start_tk_loop(self, update_callback):
         """UI 루프를 시작하는 메서드"""
         self.root.after(0, update_callback)
         self.root.mainloop()
